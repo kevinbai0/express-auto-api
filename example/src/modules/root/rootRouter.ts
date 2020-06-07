@@ -1,15 +1,8 @@
 import express from "express"
 import { userRouter } from "../user/userRouter"
 import { createEndpoint } from "../../../../src/core"
-import { Middleware } from "../../../../src/core/types"
 
 export const rootRouter = express.Router()
-
-const sampleMiddleware: Middleware<MiddlewareCounter, MiddlewareCounter> = endpoint => middleware => options => {
-  return endpoint({
-    count: (middleware?.count ?? 0) + 1
-  })(options)
-}
 
 /**
  * This is a good example of where, you can throw in inline generic types
@@ -23,20 +16,15 @@ const sampleMiddleware: Middleware<MiddlewareCounter, MiddlewareCounter> = endpo
  * The problem with this is that there's no guarantee that the actual endpoint & http method actually
  * matches up with the comment
  */
+
 rootRouter.get(
   "/",
-  createEndpoint(
-    sampleMiddleware(
-      sampleMiddleware(middleware => async () => {
-        return {
-          middlewares: middleware?.count ?? -1
-        }
-      })
-    )
-  )
+  // here, the response type is inferred as numebr | "hello"
+  createEndpoint(async () => {
+    if (Math.random() < 0.5) {
+      return Math.random()
+    }
+    return "hello"
+  })
 )
 rootRouter.use("/users", userRouter)
-
-type MiddlewareCounter = {
-  count: number
-}

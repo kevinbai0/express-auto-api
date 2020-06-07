@@ -5,11 +5,7 @@ import { comparePassword } from "../../utils/password"
 import { IUserLoginEndpoint, IUserRegisterRequest, IUserRegisterResponse } from "./userTypes"
 import { createEndpoint } from "../../../../src/core"
 
-type MiddlewareCounter = {
-  count: number
-}
-
-export const register = createEndpoint<IUserRegisterRequest, IUserRegisterResponse>(() => async ({ req, error }) => {
+export const register = createEndpoint<IUserRegisterRequest, IUserRegisterResponse>(async ({ req, error }) => {
   if (req.body.username.length < 4 || req.body.password.length < 8) {
     return error.badRequest(new Error("Username or password too short"))
   }
@@ -32,7 +28,7 @@ export const register = createEndpoint<IUserRegisterRequest, IUserRegisterRespon
   }
 })
 
-export const login: IUserLoginEndpoint = () => async ({ req, error }) => {
+export const login: IUserLoginEndpoint = async ({ req, error }) => {
   const { username, password } = req.body
   const user = await User.findOne({
     where: { username }

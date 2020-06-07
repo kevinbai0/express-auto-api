@@ -8,7 +8,8 @@ import {
   ErrorStatus,
   IExpressResponse,
   IResponse,
-  IExpressRequest
+  IExpressRequest,
+  IExpressEndpointHandlerOptions
 } from "./types"
 import { createErrorStatus, prefixErrorMessage } from "./errors"
 
@@ -38,40 +39,15 @@ export const sendErrorResponse = <T, S extends IRequest>(
     .end()
 }
 
-export const createEndpoint = <Req extends IRequest = IRequest, Res extends {} = {}, T extends {} = {}>(
-  endpoint: IExpressEndpointHandler<Req, Res, T>
-) => {
-  return async (req: IExpressRequest<Req>, res: IExpressResponse<IResponse<Res>>) => {
-    try {
-      const result = await endpoint()({
-        req,
-        res,
-        error: errorStatus,
-        // middleware values don't matter in the response
-        fromMiddleware: {}
-      })
-      const asError = result as IErrorStatus
-      if (typeof result === "object" && asError.isError) {
-        return sendErrorResponse(req, res, asError.type, asError.error)
-      }
-      return sendSuccessResponse(res, result as Res)
-    } catch (err) {
-      return sendErrorResponse(req, res, ErrorStatus.INTERNAL_ERROR, err)
-    }
-  }
-}
-
-export const createSimpleEndpoint = <Req extends IRequest = IRequest, Res extends {} = {}>(
-  endpoint: ReturnType<IExpressEndpointHandler<Req, Res>>
+export const createEndpoint = <Req extends IRequest = IRequest, Res = {}>(
+  endpoint: IExpressEndpointHandler<Req, Res>
 ) => {
   return async (req: IExpressRequest<Req>, res: IExpressResponse<IResponse<Res>>) => {
     try {
       const result = await endpoint({
         req,
         res,
-        error: errorStatus,
-        // middleware values don't matter in the response
-        fromMiddleware: {}
+        error: errorStatus
       })
       const asError = result as IErrorStatus
       if (typeof result === "object" && asError.isError) {
