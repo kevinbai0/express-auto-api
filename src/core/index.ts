@@ -8,8 +8,7 @@ import {
   ErrorStatus,
   IExpressResponse,
   IResponse,
-  IExpressRequest,
-  IExpressEndpointHandlerOptions
+  IExpressRequest
 } from "./types"
 import { createErrorStatus, prefixErrorMessage } from "./errors"
 
@@ -103,10 +102,3 @@ export const verifyObject = (body: object, keys: (string | number | symbol)[]) =
 }
 
 export const buildProto = <T>(data: Partial<T>) => data as T
-
-export const handleErrors = (...cases: [boolean, IErrorStatus][]): IErrorStatus | undefined => {
-  const results = cases.filter(testCase => testCase[0])
-  if (results.length) {
-    return results[0][1]
-  }
-}

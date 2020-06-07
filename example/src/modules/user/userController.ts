@@ -2,10 +2,9 @@ import { nanoid } from "nanoid"
 import { generateToken, TokenType } from "../../auth"
 import { createUserModel, User } from "../../database/models/User"
 import { comparePassword } from "../../utils/password"
-import { IUserLoginEndpoint, IUserRegisterRequest, IUserRegisterResponse } from "./userTypes"
-import { createEndpoint } from "../../../../src/core"
+import { IUserLoginEndpoint, IUserRegisterEndpoint } from "./userTypes"
 
-export const register = createEndpoint<IUserRegisterRequest, IUserRegisterResponse>(async ({ req, error }) => {
+export const register: IUserRegisterEndpoint = async ({ req, error }) => {
   if (req.body.username.length < 4 || req.body.password.length < 8) {
     return error.badRequest(new Error("Username or password too short"))
   }
@@ -26,7 +25,7 @@ export const register = createEndpoint<IUserRegisterRequest, IUserRegisterRespon
     access_token: generateToken(id, TokenType.ACCESS_TOKEN),
     user: createUserModel(user)
   }
-})
+}
 
 export const login: IUserLoginEndpoint = async ({ req, error }) => {
   const { username, password } = req.body
