@@ -1,5 +1,4 @@
 import { Request, Response } from "express"
-import { Model } from "sequelize/types"
 
 export enum HttpMethod {
   GET = "GET",
@@ -50,7 +49,7 @@ export interface IDeleteRequest<Params extends Record<string, string>, Body exte
   type: HttpMethod.DELETE
 }
 
-export type IExpressEndpointHandler<Req extends IRequest<{}, {}, {}>, Res, T = Model> = (options: {
+export type IExpressEndpointHandler<Req extends IRequest<{}, {}, {}>, Res, T = unknown> = (options: {
   req: IExpressRequest<Req>
   res: IExpressResponse<IResponse<Res>>
   error: IErrorStatusMethods
