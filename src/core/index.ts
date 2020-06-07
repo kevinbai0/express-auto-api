@@ -1,6 +1,5 @@
 import { NextFunction, Response } from "express"
 import isEqual from "lodash/isEqual"
-import passport from "passport"
 import {
   IErrorStatusMethods,
   IExpressEndpointHandler,
@@ -12,9 +11,7 @@ import {
   IResponse,
   IExpressRequest
 } from "./types"
-import { ModelStatic } from "../../example/database"
-import { Model } from "sequelize/types"
-import { createErrorStatus, prefixErrorMessage, createErrorMessage } from "./errors"
+import { createErrorStatus, prefixErrorMessage } from "./errors"
 
 const errorStatus: IErrorStatusMethods = {
   forbidden: (err?: Error) => createErrorStatus(ErrorStatus.FORBIDDEN, err),
@@ -42,11 +39,8 @@ export const sendErrorResponse = <T, S extends IRequest<{}, {}, {}>>(
     .end()
 }
 
-export const createEndpoint = <Req extends IRequest<{}, {}, {}>, Res, T extends Model>(
-  endpoint: IExpressEndpointHandler<Req, Res, T>,
-  withAuth?: {
-    auth: ModelStatic<T>
-  }
+export const createEndpoint = <Req extends IRequest<{}, {}, {}>, Res, T extends unknown>(
+  endpoint: IExpressEndpointHandler<Req, Res, T>
 ) => {
   return {
     validate(validations: IRequestValidation<Req>[]) {
@@ -73,17 +67,6 @@ export const createEndpoint = <Req extends IRequest<{}, {}, {}>, Res, T extends 
       }
     },
     init: () => async (req: IExpressRequest<Req>, res: IExpressResponse<IResponse<Res>>, next: NextFunction) => {
-      if (withAuth?.auth) {
-        return passport.authenticate("jwt", { session: false }, (err, user: T | null) => {
-          if (err) {
-            return next(createErrorMessage(ErrorStatus.FORBIDDEN, err))
-          }
-          if (!user) {
-            return next(createErrorMessage(ErrorStatus.FORBIDDEN, err))
-          }
-          method(user, req.headers.authorization?.split(" ")[1] || null)
-        })(req, res, next)
-      }
       return method(null, null)
       async function method(user: T | null, token: string | null) {
         try {
