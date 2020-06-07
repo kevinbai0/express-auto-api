@@ -46,10 +46,8 @@ const transfomer = <T extends ts.Node>(): ts.TransformerFactory<T> => context =>
 const createTsProgram = async () => {
   const files = await getFileList("./src")
   const config = JSON.parse(readFileSync("./tsconfig.json", "utf-8"))
-  const lintConfig = JSON.parse(readFileSync("./.eslintrc", "utf-8"))
 
   const program = ts.createProgram(files, config)
-  const linter = new lint.Linter()
   const printer = ts.createPrinter()
 
   const output: { result: ts.TransformationResult<ts.SourceFile>; filePath: string; dirPath: string }[] = []
@@ -81,6 +79,7 @@ const createTsProgram = async () => {
     if (!result.transformed[0]) {
       throw new Error("Result doesn't have file")
     }
+    console.log(filePath, dirPath)
     await createDirRecursive(dirPath)
     writeFile(filePath, printer.printFile(result.transformed[0]))
   })
