@@ -21,7 +21,7 @@ const errorStatus: IErrorStatusMethods = {
   internalError: (err?: Error) => createErrorStatus(ErrorStatus.INTERNAL_ERROR, err)
 }
 
-export const sendErrorResponse = <T, S extends IRequest<{}, {}, {}>>(
+export const sendErrorResponse = <T, S extends IRequest>(
   req: IExpressRequest<S>,
   res: Response<IResponse<T>>,
   status: ErrorStatus,
@@ -39,7 +39,7 @@ export const sendErrorResponse = <T, S extends IRequest<{}, {}, {}>>(
     .end()
 }
 
-export const createEndpoint = <Req extends IRequest<{}, {}, {}>, Res, T extends unknown>(
+export const createEndpoint = <Req extends IRequest = IRequest, Res = {}, T = unknown>(
   endpoint: IExpressEndpointHandler<Req, Res, T>
 ) => {
   return {
@@ -100,7 +100,7 @@ export const sendSuccessResponse = <T>(res: IExpressResponse<IResponse<T>>, data
     })
     .end()
 
-export const validateBody = <Req extends IRequest<{}, {}, {}>>(
+export const validateBody = <Req extends IRequest>(
   keys: (keyof Req["body"])[],
   optionalKeys?: (keyof Req["body"])[]
 ) => {
