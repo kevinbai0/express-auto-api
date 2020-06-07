@@ -2,9 +2,8 @@ import { readFileSync } from "fs"
 import flattenDeep from "lodash/flattenDeep"
 import path from "path"
 import ts from "typescript"
-import lint from "eslint"
 import { createDirRecursive, isDirectory, listDir, writeFile } from "./fs"
-const appRoot = path.resolve(__dirname, "../..", "./src")
+const appRoot = path.resolve(__dirname, "../..", "example", "src")
 const outputDir = path.resolve(__dirname, "../..", "out", "data")
 
 const getFileList = async (dir: string): Promise<string[]> => {
@@ -22,13 +21,7 @@ const getFileList = async (dir: string): Promise<string[]> => {
   return flattenDeep(folder)
 }
 
-const availableASTTypes = [
-  ts.isTypeAliasDeclaration,
-  ts.isInterfaceDeclaration,
-  ts.isEnumDeclaration,
-  ts.isImportDeclaration,
-  ts.isSourceFile
-]
+const availableASTTypes = [ts.isTypeAliasDeclaration, ts.isInterfaceDeclaration, ts.isEnumDeclaration, ts.isSourceFile]
 
 const transfomer = <T extends ts.Node>(): ts.TransformerFactory<T> => context => {
   const visit: ts.Visitor = node => {
@@ -44,7 +37,7 @@ const transfomer = <T extends ts.Node>(): ts.TransformerFactory<T> => context =>
 }
 
 const createTsProgram = async () => {
-  const files = await getFileList("./src")
+  const files = await getFileList("./example/src/")
   const config = JSON.parse(readFileSync("./tsconfig.json", "utf-8"))
 
   const program = ts.createProgram(files, config)
@@ -80,8 +73,11 @@ const createTsProgram = async () => {
       throw new Error("Result doesn't have file")
     }
     console.log(filePath, dirPath)
-    await createDirRecursive(dirPath)
-    writeFile(filePath, printer.printFile(result.transformed[0]))
+    const fileToWrite = printer.printFile(result.transformed[0])
+    if (fileToWrite) {
+      await createDirRecursive(dirPath)
+      writeFile(filePath, fileToWrite)
+    }
   })
 }
 
