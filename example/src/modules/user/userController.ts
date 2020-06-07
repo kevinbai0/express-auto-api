@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid"
 import { generateToken, TokenType } from "../../auth"
 import { createUserModel, User } from "../../database/models/User"
-import { handleErrors } from "../../../src/core"
+import { handleErrors } from "../../../../src/core"
 import { comparePassword } from "../../utils/password"
 import { IUserAuthorizeEndpoint, IUserLoginEndpoint, IUserRegisterEndpoint } from "./userTypes"
 

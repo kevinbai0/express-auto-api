@@ -7,11 +7,7 @@ export enum HttpMethod {
   DELETE = "DELETE"
 }
 
-export interface IRequest<
-  Params extends Record<string, string>,
-  Body extends Record<string, unknown>,
-  Query extends {}
-> {
+export interface IRequest<Params = Record<string, string>, Body = Record<string, unknown>, Query = {}> {
   type: HttpMethod
   params: Params
   body: Body
@@ -25,7 +21,7 @@ export interface IResponse<Body> {
   error?: string
 }
 
-export type IExpressRequest<Req extends IRequest<{}, {}, {}>> = Request<
+export type IExpressRequest<Req extends IRequest = IRequest> = Request<
   Req["params"],
   unknown,
   Req["body"],
@@ -33,7 +29,7 @@ export type IExpressRequest<Req extends IRequest<{}, {}, {}>> = Request<
 >
 export type IExpressResponse<Res extends IResponse<unknown>> = Response<Res>
 
-export interface IGetRequest<Params extends Record<string, string>, Query> extends IRequest<Params, {}, Query> {
+export interface IGetRequest<Params = Record<string, string>, Query = {}> extends IRequest<Params, {}, Query> {
   type: HttpMethod.GET
 }
 export interface IPostRequest<Params extends Record<string, string>, Body extends Record<string, unknown>>
@@ -49,7 +45,7 @@ export interface IDeleteRequest<Params extends Record<string, string>, Body exte
   type: HttpMethod.DELETE
 }
 
-export type IExpressEndpointHandler<Req extends IRequest<{}, {}, {}>, Res, T = unknown> = (options: {
+export type IExpressEndpointHandler<Req extends IRequest = IRequest, Res = {}, T = unknown> = (options: {
   req: IExpressRequest<Req>
   res: IExpressResponse<IResponse<Res>>
   error: IErrorStatusMethods

@@ -1,5 +1,5 @@
 import { IUserModel, User } from "../../database/models/User"
-import { IExpressEndpointHandler, IGetRequest, IPostRequest } from "../../../src/core/types"
+import { IExpressEndpointHandler, IGetRequest, IPostRequest } from "../../../../src/core/types"
 
 export type IUserRegisterRequest = IPostRequest<
   {},
