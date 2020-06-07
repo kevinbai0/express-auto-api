@@ -1,9 +1,15 @@
 import express from "express"
 import { userRouter } from "../user/userRouter"
 import { createEndpoint } from "../../../../src/core"
-import { IGetRequest } from "../../../../src/core/types"
+import { Middleware } from "../../../../src/core/types"
 
 export const rootRouter = express.Router()
+
+const sampleMiddleware: Middleware<MiddlewareCounter, MiddlewareCounter> = endpoint => middleware => options => {
+  return endpoint({
+    count: (middleware?.count ?? 0) + 1
+  })(options)
+}
 
 /**
  * This is a good example of where, you can throw in inline generic types
@@ -19,8 +25,18 @@ export const rootRouter = express.Router()
  */
 rootRouter.get(
   "/",
-  createEndpoint<IGetRequest, { message: string }>(async () => ({
-    message: "Hello World"
-  })).init()
+  createEndpoint(
+    sampleMiddleware(
+      sampleMiddleware(middleware => async () => {
+        return {
+          middlewares: middleware?.count ?? -1
+        }
+      })
+    )
+  )
 )
 rootRouter.use("/users", userRouter)
+
+type MiddlewareCounter = {
+  count: number
+}

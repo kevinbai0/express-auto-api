@@ -45,13 +45,24 @@ export interface IDeleteRequest<Params extends Record<string, string>, Body exte
   type: HttpMethod.DELETE
 }
 
-export type IExpressEndpointHandler<Req extends IRequest = IRequest, Res = {}, T = unknown> = (options: {
+export type IExpressEndpointHandlerOptions<
+  Req extends IRequest = IRequest,
+  Res = {},
+  AdditionalOptions extends {} = {}
+> = {
   req: IExpressRequest<Req>
   res: IExpressResponse<IResponse<Res>>
   error: IErrorStatusMethods
-  user: T | null
-  token: string | null
-}) => Promise<Res | IErrorStatus>
+  fromMiddleware: Partial<AdditionalOptions>
+}
+
+export type IExpressEndpointHandler<Req extends IRequest = IRequest, Res = {}, AdditionalOptions = {}> = (
+  middleware?: AdditionalOptions
+) => (options: IExpressEndpointHandlerOptions<Req, Res>) => Promise<Res | IErrorStatus>
+
+export type Middleware<T extends {}, S extends {} = {}> = <Req extends IRequest, Res extends {}>(
+  endpoint: IExpressEndpointHandler<Req, Res, T & S>
+) => (middleware?: S) => ReturnType<IExpressEndpointHandler<Req, Res, T & S>>
 
 export enum ErrorStatus {
   BAD_REQUEST = 400,
@@ -68,11 +79,11 @@ export type IErrorStatus = {
 }
 
 export type IErrorStatusMethods = {
-  forbidden: (err?: Error) => IErrorStatus
-  unauthorized: (err?: Error) => IErrorStatus
-  badRequest: (err?: Error) => IErrorStatus
-  notFound: (err?: Error) => IErrorStatus
-  internalError: (err?: Error) => IErrorStatus
+  forbidden: (err?: Error) => Promise<IErrorStatus>
+  unauthorized: (err?: Error) => Promise<IErrorStatus>
+  badRequest: (err?: Error) => Promise<IErrorStatus>
+  notFound: (err?: Error) => Promise<IErrorStatus>
+  internalError: (err?: Error) => Promise<IErrorStatus>
 }
 
 export type IRequestValidation<Req extends IRequest<{}, {}, {}>> = (

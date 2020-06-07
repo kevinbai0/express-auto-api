@@ -1,4 +1,4 @@
-import { IUserModel, User } from "../../database/models/User"
+import { IUserModel } from "../../database/models/User"
 import { IExpressEndpointHandler, IGetRequest, IPostRequest } from "../../../../src/core/types"
 
 export type IUserRegisterRequest = IPostRequest<
@@ -39,4 +39,4 @@ export type IUserAuthorizeResponse = {
   user: IUserModel
 }
 
-export type IUserAuthorizeEndpoint = IExpressEndpointHandler<IUserAuthorizeRequest, IUserAuthorizeResponse, User>
+export type IUserAuthorizeEndpoint = IExpressEndpointHandler<IUserAuthorizeRequest, IUserAuthorizeResponse>

@@ -2,8 +2,8 @@ import jwt from "jsonwebtoken"
 import passport from "passport"
 import { ExtractJwt, Strategy as JWTStrategy } from "passport-jwt"
 import { User } from "../database/models/User"
-import { ErrorStatus } from "../../src/core/types"
-import { createErrorMessage } from "../../src/core/errors"
+import { ErrorStatus } from "../../../src/core/types"
+import { createErrorMessage } from "../../../src/core/errors"
 
 const SECRET_KEY = "test"
 

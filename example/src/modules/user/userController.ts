@@ -1,21 +1,20 @@
 import { nanoid } from "nanoid"
 import { generateToken, TokenType } from "../../auth"
 import { createUserModel, User } from "../../database/models/User"
-import { handleErrors } from "../../../../src/core"
 import { comparePassword } from "../../utils/password"
-import { IUserAuthorizeEndpoint, IUserLoginEndpoint, IUserRegisterEndpoint } from "./userTypes"
+import { IUserLoginEndpoint, IUserRegisterRequest, IUserRegisterResponse } from "./userTypes"
+import { createEndpoint } from "../../../../src/core"
 
-export const register: IUserRegisterEndpoint = async ({ req, error }) => {
-  const errors = handleErrors(
-    [
-      req.body.username.length < 4 || req.body.password.length < 8,
-      error.badRequest(new Error("Username or password too short"))
-    ],
-    [req.body.secret !== process.env.SECRET, error.badRequest(new Error("Incorrect secret"))]
-  )
+type MiddlewareCounter = {
+  count: number
+}
 
-  if (errors) {
-    return errors
+export const register = createEndpoint<IUserRegisterRequest, IUserRegisterResponse>(() => async ({ req, error }) => {
+  if (req.body.username.length < 4 || req.body.password.length < 8) {
+    return error.badRequest(new Error("Username or password too short"))
+  }
+  if (req.body.secret !== process.env.SECRET) {
+    await error.badRequest(new Error("Incorrect secret"))
   }
 
   const id = nanoid()
@@ -31,9 +30,9 @@ export const register: IUserRegisterEndpoint = async ({ req, error }) => {
     access_token: generateToken(id, TokenType.ACCESS_TOKEN),
     user: createUserModel(user)
   }
-}
+})
 
-export const login: IUserLoginEndpoint = async ({ req, error }) => {
+export const login: IUserLoginEndpoint = () => async ({ req, error }) => {
   const { username, password } = req.body
   const user = await User.findOne({
     where: { username }
@@ -52,15 +51,4 @@ export const login: IUserLoginEndpoint = async ({ req, error }) => {
     user,
     access_token
   }
-}
-
-export const authorize: IUserAuthorizeEndpoint = async ({ error, user, token }) => {
-  if (user && user.get("refresh_token") === token) {
-    return {
-      user: createUserModel(user),
-      access_token: generateToken(user.get("id"), TokenType.ACCESS_TOKEN)
-    }
-  }
-
-  return error.badRequest(new Error("User not found"))
 }
