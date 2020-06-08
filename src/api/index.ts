@@ -25,13 +25,13 @@ const availableASTTypes = [ts.isTypeAliasDeclaration, ts.isInterfaceDeclaration,
 
 const transfomer = <T extends ts.Node>(): ts.TransformerFactory<T> => context => {
   const visit: ts.Visitor = node => {
-    if (ts.isSourceFile(node)) {
-      return ts.visitEachChild(node, child => visit(child), context)
+    if (ts.isPropertyAccessExpression(node)) {
+      console.log(node)
     }
-    if (availableASTTypes.filter(type => type(node)).length) {
-      return node
-    }
-    return undefined
+    // if (ts.isSourceFile(node)) {
+    //   return ts.visitEachChild(node, child => visit(child), context)
+    // }
+    return ts.visitEachChild(node, child => visit(child), context);
   }
   return node => ts.visitNode(node, visit)
 }
