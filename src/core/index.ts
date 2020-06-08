@@ -1,9 +1,8 @@
-import { NextFunction, Response } from "express"
+import { Response } from "express"
 import isEqual from "lodash/isEqual"
 import {
   IErrorStatusMethods,
   IExpressEndpointHandler,
-  IRequestValidation,
   IRequest,
   IErrorStatus,
   ErrorStatus,
@@ -14,11 +13,11 @@ import {
 import { createErrorStatus, prefixErrorMessage } from "./errors"
 
 const errorStatus: IErrorStatusMethods = {
-  forbidden: (err?: Error) => createErrorStatus(ErrorStatus.FORBIDDEN, err),
-  unauthorized: (err?: Error) => createErrorStatus(ErrorStatus.UNAUTHORIZED, err),
-  badRequest: (err?: Error) => createErrorStatus(ErrorStatus.BAD_REQUEST, err),
-  notFound: (err?: Error) => createErrorStatus(ErrorStatus.NOT_FOUND, err),
-  internalError: (err?: Error) => createErrorStatus(ErrorStatus.INTERNAL_ERROR, err)
+  forbidden: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.FORBIDDEN, err)),
+  unauthorized: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.UNAUTHORIZED, err)),
+  badRequest: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.BAD_REQUEST, err)),
+  notFound: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.NOT_FOUND, err)),
+  internalError: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.INTERNAL_ERROR, err))
 }
 
 export const sendErrorResponse = <T, S extends IRequest>(
@@ -39,53 +38,23 @@ export const sendErrorResponse = <T, S extends IRequest>(
     .end()
 }
 
-export const createEndpoint = <Req extends IRequest = IRequest, Res = {}, T = unknown>(
-  endpoint: IExpressEndpointHandler<Req, Res, T>
+export const createEndpoint = <Req extends IRequest = IRequest, Res = {}>(
+  endpoint: IExpressEndpointHandler<Req, Res>
 ) => {
-  return {
-    validate(validations: IRequestValidation<Req>[]) {
-      return async (req: IExpressRequest<Req>, res: IExpressResponse<IResponse<Res>>, next: NextFunction) => {
-        const notValidResults = validations.reduce(
-          (valid, validation) => {
-            if (!valid[0]) {
-              return valid
-            }
-            const isValid = validation(req)
-            return typeof isValid === "boolean" ? ([isValid, ""] as [boolean, string]) : isValid
-          },
-          [true, ""] as [boolean, string]
-        )
-        if (!notValidResults[0]) {
-          return sendErrorResponse(
-            req,
-            res,
-            ErrorStatus.BAD_REQUEST,
-            notValidResults[1] ? new Error(notValidResults[1]) : undefined
-          )
-        }
-        return this.init()(req, res, next)
+  return async (req: IExpressRequest<Req>, res: IExpressResponse<IResponse<Res>>) => {
+    try {
+      const result = await endpoint({
+        req,
+        res,
+        error: errorStatus
+      })
+      const asError = result as IErrorStatus
+      if (typeof result === "object" && asError.isError) {
+        return sendErrorResponse(req, res, asError.type, asError.error)
       }
-    },
-    init: () => async (req: IExpressRequest<Req>, res: IExpressResponse<IResponse<Res>>, next: NextFunction) => {
-      return method(null, null)
-      async function method(user: T | null, token: string | null) {
-        try {
-          const result = await endpoint({
-            req,
-            res,
-            error: errorStatus,
-            user,
-            token
-          })
-          const asError = result as IErrorStatus
-          if (typeof result === "object" && asError.isError) {
-            return sendErrorResponse(req, res, asError.type, asError.error)
-          }
-          return sendSuccessResponse(res, result as Res)
-        } catch (err) {
-          return sendErrorResponse(req, res, ErrorStatus.INTERNAL_ERROR, err)
-        }
-      }
+      return sendSuccessResponse(res, result as Res)
+    } catch (err) {
+      return sendErrorResponse(req, res, ErrorStatus.INTERNAL_ERROR, err)
     }
   }
 }
@@ -133,10 +102,3 @@ export const verifyObject = (body: object, keys: (string | number | symbol)[]) =
 }
 
 export const buildProto = <T>(data: Partial<T>) => data as T
-
-export const handleErrors = (...cases: [boolean, IErrorStatus][]): IErrorStatus | undefined => {
-  const results = cases.filter(testCase => testCase[0])
-  if (results.length) {
-    return results[0][1]
-  }
-}
