@@ -2,25 +2,49 @@ import dotenv from "dotenv"
 dotenv.config({ path: "../.env" })
 
 import bodyParser from "body-parser"
-import express from "express"
-import logger from "express-pino-logger"
-import "./auth"
-import { Database } from "./database"
-import { User } from "./database/models/User"
-import { rootRouter } from "./modules/root/rootRouter"
+import { IGetRequest } from "../../src/core/types"
+import { Handler } from "../../src/core/coreTypes"
+import { createEndpoint, createEndpoints } from "../../src/core/core"
+import { createApp } from "../../src/core"
 
-const db = Database.get()
-
-async function startApp() {
-  await db.start([User])
-
-  const app = express()
-
-  app.use(logger())
-  app.use(bodyParser.json())
-  app.use(`/api`, rootRouter)
-
-  app.listen(9000)
+const coolStuff: Handler<{ stuff: string }, IGetRequest> = (_, res) => {
+  res.send({
+    status: 400,
+    success: false,
+    error: "Bad request"
+  })
 }
 
-startApp()
+const getUser: Handler<"hello", IGetRequest> = (_, res) => {
+  res.send({
+    data: "hello",
+    success: true,
+    status: 200
+  })
+}
+
+const createUser: Handler<undefined> = (_, res) => {
+  res.send({
+    success: true,
+    status: 200
+  })
+}
+
+const errorThrower: Handler = () => {
+  throw Error("this is a test error")
+}
+
+const otherEndpoints = createEndpoints().endpoints({
+  CoolStuff: createEndpoint("GET", "/other-stuff", coolStuff)
+})
+
+const appEndpoints = createEndpoints()
+  .middleware(bodyParser.json())
+  .subendpoints(otherEndpoints)
+  .endpoints({
+    GetUser: createEndpoint<"hello">("GET", "/get-stuff", getUser),
+    CreateUser: createEndpoint("POST", "/post-stuff", createUser),
+    ErrorEndpoint: createEndpoint("GET", "/error-endpoint", errorThrower)
+  })
+
+createApp(appEndpoints)

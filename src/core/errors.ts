@@ -1,10 +1,18 @@
-import { ErrorStatus, IErrorStatus, IResponse } from "./types"
+import { ErrorStatus, IErrorStatus, IResponse, IErrorStatusMethods } from "./types"
 
 export const createErrorStatus = (type: ErrorStatus, error?: Error): IErrorStatus => ({
   isError: true,
   type,
   error
 })
+
+export const errorStatus: IErrorStatusMethods = {
+  forbidden: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.FORBIDDEN, err)),
+  unauthorized: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.UNAUTHORIZED, err)),
+  badRequest: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.BAD_REQUEST, err)),
+  notFound: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.NOT_FOUND, err)),
+  internalError: (err?: Error) => Promise.resolve(createErrorStatus(ErrorStatus.INTERNAL_ERROR, err))
+}
 
 export const createErrorMessage = (status: ErrorStatus, err?: Error): IResponse<undefined> => {
   return {

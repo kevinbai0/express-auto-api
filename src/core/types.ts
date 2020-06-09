@@ -1,12 +1,28 @@
 import { Request, Response } from "express"
 
-export enum HttpMethod {
-  GET = "GET",
-  POST = "POST",
-  PUT = "PUT",
-  DELETE = "DELETE"
-}
+export type MainHttpMethod = "GET" | "POST" | "PUT" | "DELETE"
+export type OtherHttpMethod =
+  | "CHECKOUT"
+  | "COPY"
+  | "HEAD"
+  | "LOCK"
+  | "MERGE"
+  | "MKACTIVITY"
+  | "MKCOL"
+  | "MOVE"
+  | "M-SEARCH"
+  | "NOTIFY"
+  | "OPTIONS"
+  | "PATCH"
+  | "PURGE"
+  | "REPORT"
+  | "SEARCH"
+  | "SUBSCRIBE"
+  | "TRACE"
+  | "UNLOCK"
+  | "UNSUBSCRIBE"
 
+export type HttpMethod = MainHttpMethod | OtherHttpMethod
 export interface IRequest<Params = Record<string, string>, Body = Record<string, unknown>, Query = {}> {
   type: HttpMethod
   params: Params
@@ -29,21 +45,22 @@ export type IExpressRequest<Req extends IRequest = IRequest> = Request<
 >
 export type IExpressResponse<Res extends IResponse<unknown>> = Response<Res>
 
-export interface IGetRequest<Params = Record<string, string>, Query = {}> extends IRequest<Params, {}, Query> {
-  type: HttpMethod.GET
-}
-export interface IPostRequest<Params extends Record<string, string>, Body extends Record<string, unknown>>
-  extends IRequest<Params, Body, {}> {
-  type: HttpMethod.POST
-}
-export interface IPutRequest<Params extends Record<string, string>, Body extends Record<string, unknown>>
-  extends IRequest<Params, Body, {}> {
-  type: HttpMethod.PUT
-}
-export interface IDeleteRequest<Params extends Record<string, string>, Body extends Record<string, unknown>>
-  extends IRequest<Params, Body, {}> {
-  type: HttpMethod.DELETE
-}
+export type IGetRequest<Params = Record<string, string>, Query = {}> = IRequest<Params, {}, Query>
+export type IPostRequest<Params extends Record<string, string>, Body extends Record<string, unknown>> = IRequest<
+  Params,
+  Body,
+  {}
+>
+export type IPutRequest<Params extends Record<string, string>, Body extends Record<string, unknown>> = IRequest<
+  Params,
+  Body,
+  {}
+>
+export type IDeleteRequest<Params extends Record<string, string>, Body extends Record<string, unknown>> = IRequest<
+  Params,
+  Body,
+  {}
+>
 
 export type IExpressEndpointHandlerOptions<Req extends IRequest = IRequest, Res = {}> = {
   req: IExpressRequest<Req>
