@@ -2,9 +2,9 @@ import { readFileSync } from "fs"
 import flattenDeep from "lodash/flattenDeep"
 import path from "path"
 import ts from "typescript"
-import { createDirRecursive, isDirectory, listDir, writeFile } from "./fs"
-const appRoot = path.resolve(__dirname, "../..", "example", "src")
-const outputDir = path.resolve(__dirname, "../..", "out", "data")
+import { isDirectory, listDir } from "./fs"
+import isEqual from "lodash/isEqual"
+import { EndpointBuilderResultKeys } from "./consts"
 
 const getFileList = async (dir: string): Promise<string[]> => {
   const dirs = await listDir(dir)
@@ -21,19 +21,88 @@ const getFileList = async (dir: string): Promise<string[]> => {
   return flattenDeep(folder)
 }
 
-const availableASTTypes = [ts.isTypeAliasDeclaration, ts.isInterfaceDeclaration, ts.isEnumDeclaration, ts.isSourceFile]
+/**
+ * Check if is of type Handler[]
+ * type Handler<Res = {}, Req extends IRequest = IRequest> = (
+ *    req: IExpressRequest<Req>,
+ *    res: IExpressResponse<IResponse<Res | undefined>>,
+ *    next: NextFunction
+ * ) => Promise<void> | void
+ * @param property
+ * @param node
+ * @param typeChecker
+ */
+const isTypeHandlerArray = (property: ts.Symbol, node: ts.Node, typeChecker: ts.TypeChecker) => {
+  const propertyType = typeChecker.getTypeOfSymbolAtLocation(property, node)
 
-const transfomer = <T extends ts.Node>(): ts.TransformerFactory<T> => context => {
-  const visit: ts.Visitor = node => {
-    if (ts.isSourceFile(node)) {
-      return ts.visitEachChild(node, child => visit(child), context)
-    }
-    if (availableASTTypes.filter(type => type(node)).length) {
-      return node
-    }
-    return undefined
+  if (propertyType.flags != ts.TypeFlags.Object) {
+    return false
   }
-  return node => ts.visitNode(node, visit)
+  // if object, should be of type TypeReference
+  if ((propertyType as ts.ObjectType).objectFlags != ts.ObjectFlags.Reference) {
+    return false
+  }
+  // TODO(kevin): need to typecheck Handler[]
+  return true
+}
+
+const isEndpointBuilderResult = (node: ts.Node, typeChecker: ts.TypeChecker) => {
+  const type = typeChecker.getTypeAtLocation(node)
+  /*
+   *  It should have 1 call signature with return type of below
+   *  type EndpointBuilderResult = () => {
+   *    Handler[],
+   *     subendpoints, EndpointBuilderResult[],
+   *    endpoints: Record<string, EndpointMethod<unknown, IRequest>>
+   *   }
+   */
+  const callSignatures = type.getCallSignatures()
+  if (callSignatures.length != 1) {
+    return false
+  }
+  const returnType = callSignatures[0].getReturnType()
+  const properties = returnType.getProperties()
+  const names = properties.map(prop => prop.name).sort()
+  if (!isEqual(names, EndpointBuilderResultKeys)) {
+    return false
+  }
+
+  // check each property for the right type
+  for (const property of properties) {
+    if (property.name == "middleware") {
+      // middleware type should be Handler[]
+      if (!isTypeHandlerArray(property, node, typeChecker)) {
+        return false
+      }
+    }
+    // TODO(kevin): need typecheck subendpoints & endpoints
+  }
+
+  return true
+}
+
+const isCreateExpressApplication = (node: ts.CallExpression, typeChecker: ts.TypeChecker) => {
+  const type = typeChecker.getTypeAtLocation(node)
+  const correctArguments = 0 < node.arguments.length && node.arguments.length <= 2
+
+  // if it is createApp, type of the node should be Void && have 1 or 2 arguments
+  if (type.flags == ts.TypeFlags.Void && correctArguments) {
+    // check if the first argument is type EndpointBuilderResult
+    return isEndpointBuilderResult(node.arguments[0], typeChecker)
+  }
+  return false
+}
+
+function visit(node: ts.Node, typeChecker: ts.TypeChecker) {
+  if (!ts.isCallExpression(node)) {
+    node.forEachChild(node => visit(node, typeChecker))
+    return
+  }
+
+  // every call expression might be a createApp, so we need to check
+  if (isCreateExpressApplication(node, typeChecker)) {
+    // do something
+  }
 }
 
 const createTsProgram = async () => {
@@ -41,44 +110,17 @@ const createTsProgram = async () => {
   const config = JSON.parse(readFileSync("./tsconfig.json", "utf-8"))
 
   const program = ts.createProgram(files, config)
-  const printer = ts.createPrinter()
+  const typeChecker = program.getTypeChecker()
+  // generate AST
+  const sources = program
+    .getSourceFiles()
+    .filter(source => !source.isDeclarationFile)
+    .reverse()
 
-  const output: { result: ts.TransformationResult<ts.SourceFile>; filePath: string; dirPath: string }[] = []
+  // first source is our root
+  sources[0].forEachChild(node => visit(node, typeChecker))
 
-  program.getSourceFiles().map(source => {
-    let isValid = false
-    ts.forEachChild(source, (node: ts.Node) => {
-      if (source.isDeclarationFile || !availableASTTypes.filter(type => !type(node)).length) {
-        return
-      }
-      isValid = true
-    })
-    if (isValid) {
-      const result = ts.transform(source, [transfomer()])
-      const relPath = path.join(outputDir, path.relative(appRoot, source.fileName))
-
-      output.push({
-        result,
-        filePath: relPath,
-        dirPath: relPath
-          .split("/")
-          .slice(0, -1)
-          .join("/")
-      })
-    }
-  })
-
-  output.forEach(async ({ result, filePath, dirPath }) => {
-    if (!result.transformed[0]) {
-      throw new Error("Result doesn't have file")
-    }
-    console.log(filePath, dirPath)
-    const fileToWrite = printer.printFile(result.transformed[0])
-    if (fileToWrite) {
-      await createDirRecursive(dirPath)
-      writeFile(filePath, fileToWrite)
-    }
-  })
+  console.log(sources.map(source => source.fileName))
 }
 
 createTsProgram()
