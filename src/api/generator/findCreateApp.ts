@@ -1,5 +1,5 @@
 import ts from "typescript"
-import { EndpointBuilderResultKeys } from "./consts"
+import { EndpointBuilderResultKeys } from "../consts"
 import isEqual from "lodash/isEqual"
 
 /**

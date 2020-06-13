@@ -1,7 +1,7 @@
 import { readFileSync } from "fs"
 import ts from "typescript"
 import { getFileList } from "./fs"
-import { generate } from "./generate"
+import { generate } from "./generator/generate"
 
 const createTsProgram = async () => {
   const files = await getFileList("./example/src/")
