@@ -1,5 +1,21 @@
 import fs from "fs"
 import path from "path"
+import flattenDeep from "lodash/flattenDeep"
+
+export const getFileList = async (dir: string): Promise<string[]> => {
+  const dirs = await listDir(dir)
+  const folder = await Promise.all(
+    dirs.map(async fileName => {
+      const newPath = path.join(dir, fileName)
+      if (await isDirectory(newPath)) {
+        return await getFileList(newPath)
+      }
+      return newPath
+    })
+  )
+
+  return flattenDeep(folder)
+}
 
 // fs methods that are promisable
 

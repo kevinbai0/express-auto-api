@@ -1,69 +1,99 @@
-import express, { Router } from "express"
-import { EndpointsBuilderResult } from "./coreTypes"
+import { Request, Response } from "express"
 
-type MainExpressHttpMethods = "get" | "post" | "put" | "delete"
-type OtherHttpMethod =
-  | "checkout"
-  | "copy"
-  | "head"
-  | "lock"
-  | "merge"
-  | "mkactivity"
-  | "mkcol"
-  | "move"
-  | "m-search"
-  | "notify"
-  | "options"
-  | "patch"
-  | "purge"
-  | "report"
-  | "search"
-  | "subscribe"
-  | "trace"
-  | "unlock"
-  | "subscribe"
+export type MainHttpMethod = "GET" | "POST" | "PUT" | "DELETE"
+export type OtherHttpMethod =
+  | "CHECKOUT"
+  | "COPY"
+  | "HEAD"
+  | "LOCK"
+  | "MERGE"
+  | "MKACTIVITY"
+  | "MKCOL"
+  | "MOVE"
+  | "M-SEARCH"
+  | "NOTIFY"
+  | "OPTIONS"
+  | "PATCH"
+  | "PURGE"
+  | "REPORT"
+  | "SEARCH"
+  | "SUBSCRIBE"
+  | "TRACE"
+  | "UNLOCK"
+  | "UNSUBSCRIBE"
 
-type ExpressHttpMethods = MainExpressHttpMethods | OtherHttpMethod
-
-type IAppConfig = {
-  port?: number
+export type HttpMethod = MainHttpMethod | OtherHttpMethod
+export interface IRequest<Params = Record<string, string>, Body = Record<string, unknown>, Query = {}> {
+  type: HttpMethod
+  params: Params
+  body: Body
+  query: Query
 }
 
-export function createApp(endpoints: EndpointsBuilderResult, config?: IAppConfig) {
-  const app = express()
-  app.use(createSubApp(endpoints))
-
-  function createSubApp(builder: EndpointsBuilderResult): Router {
-    const router = Router()
-
-    const tree = builder()
-
-    tree.middleware.forEach(middleware => {
-      router.use(middleware)
-    })
-
-    tree.subendpoints.forEach(result => {
-      const subapp = createSubApp(result)
-      router.use(subapp)
-    })
-
-    Object.values(tree.endpoints).forEach(endpoint => {
-      const method = endpoint.method.toLowerCase() as ExpressHttpMethods
-      router[method](endpoint.path, endpoint.handlers)
-    })
-
-    return router
-  }
-
-  // we can do this instead: config?.port || 3000 ok wait but ohh yeah that works
-  // app is running and working for me - ohh nice
-
-  // so the backend is pretty much one?
-  // I think so for the most part
-  // I think we just have cleaning up to do now
-  // ohh ok and then we can start the frontend modules later :+1
-  const port = config?.port || 3000
-  app.listen(port, () => {
-    console.log(`Express app listening on port ${port}.`)
-  })
+export interface IResponse<Body> {
+  data?: Body
+  success: boolean
+  status: ErrorStatus
+  error?: string
 }
+
+export type IExpressRequest<Req extends IRequest = IRequest> = Request<
+  Req["params"],
+  unknown,
+  Req["body"],
+  Req["query"]
+>
+export type IExpressResponse<Res extends IResponse<unknown>> = Response<Res>
+
+export type IGetRequest<Params = Record<string, string>, Query = {}> = IRequest<Params, {}, Query>
+export type IPostRequest<Params extends Record<string, string>, Body extends Record<string, unknown>> = IRequest<
+  Params,
+  Body,
+  {}
+>
+export type IPutRequest<Params extends Record<string, string>, Body extends Record<string, unknown>> = IRequest<
+  Params,
+  Body,
+  {}
+>
+export type IDeleteRequest<Params extends Record<string, string>, Body extends Record<string, unknown>> = IRequest<
+  Params,
+  Body,
+  {}
+>
+
+export type IExpressEndpointHandlerOptions<Req extends IRequest = IRequest, Res = {}> = {
+  req: IExpressRequest<Req>
+  res: IExpressResponse<IResponse<Res>>
+  error: IErrorStatusMethods
+}
+
+export type IExpressEndpointHandler<Req extends IRequest = IRequest, Res = {}> = (
+  options: IExpressEndpointHandlerOptions<Req, Res>
+) => Promise<Res | IErrorStatus>
+
+export enum ErrorStatus {
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  INTERNAL_ERROR = 500
+}
+
+export type IErrorStatus = {
+  isError: true
+  type: ErrorStatus
+  error?: Error
+}
+
+export type IErrorStatusMethods = {
+  forbidden: (err?: Error) => Promise<IErrorStatus>
+  unauthorized: (err?: Error) => Promise<IErrorStatus>
+  badRequest: (err?: Error) => Promise<IErrorStatus>
+  notFound: (err?: Error) => Promise<IErrorStatus>
+  internalError: (err?: Error) => Promise<IErrorStatus>
+}
+
+export type IRequestValidation<Req extends IRequest<{}, {}, {}>> = (
+  data: IExpressRequest<Req>
+) => boolean | [boolean, string]

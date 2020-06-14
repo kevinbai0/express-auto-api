@@ -9,7 +9,6 @@ export type MiddlewareFunction = (
   subendpoints: SubendpointsFunction
   endpoints: EndpointsFunction
 }
-
 export type SubendpointsFunction = (
   ...subendpoints: EndpointsBuilderResult[]
 ) => {
@@ -17,21 +16,17 @@ export type SubendpointsFunction = (
   subendpoints: EndpointsBuilderResult[]
   endpoints: EndpointsFunction
 }
-
 export type EndpointsFunction = (endpoints: Record<string, EndpointMethod<unknown, any>>) => EndpointsBuilderResult
-
 export type EndpointsBuilder = () => {
   middleware: MiddlewareFunction
   subendpoints: SubendpointsFunction
   endpoints: EndpointsFunction
 }
-
 export type EndpointsBuilderResult = () => {
   middleware: Handler[]
   subendpoints: EndpointsBuilderResult[]
   endpoints: Record<string, EndpointMethod<unknown, IRequest>>
 }
-
 export type IHandlerOptions<Res = {}, Req extends IRequest = IRequest> = {
   req: IExpressRequest<Req>
   res: IExpressResponse<IResponse<Res | undefined>>
@@ -42,7 +37,6 @@ export type Handler<Res = {}, Req extends IRequest = IRequest> = (
   res: IExpressResponse<IResponse<Res | undefined>>,
   next: NextFunction
 ) => Promise<void> | void
-
 export type EndpointMethod<Res extends unknown, Req extends IRequest = IRequest> = {
   method: HttpMethod
   path: string

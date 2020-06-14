@@ -12,13 +12,14 @@
         "url": "git+https://github.com/kevinbai0/node-ts-starter.git"
     },
     "dependencies": {
-        "express": "^4.17.1"
+        "express": "^4.17.1",
+        "lodash": "^4.17.15"
     },
     "devDependencies": {
         "@types/eslint": "^6.8.1",
         "@types/express": "^4.17.6",
         "@types/jest": "^25.1.4",
-        "@types/lodash": "^4.14.154",
+        "@types/lodash": "^4.14.155",
         "@types/node": "^14.0.6",
         "@typescript-eslint/eslint-plugin": "^2.13.0",
         "@typescript-eslint/parser": "^2.13.0",
