@@ -62,6 +62,12 @@ const isEndpointBuilderResult = (node: ts.Node, typeChecker: ts.TypeChecker) => 
   return true
 }
 
+// temporary function to find createApp function while actual function is being developed
+export const isCreateExpressApplication_temporary = (node: ts.CallExpression, typeChecker: ts.TypeChecker) => {
+  return node.expression.getText() === "createApp"
+}
+
+// @Kevin: this is your function that you were working on
 export const isCreateExpressApplication = (node: ts.CallExpression, typeChecker: ts.TypeChecker) => {
   const type = typeChecker.getTypeAtLocation(node)
   const correctArguments = 0 < node.arguments.length && node.arguments.length <= 2
