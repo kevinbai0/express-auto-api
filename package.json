@@ -12,7 +12,7 @@
         "url": "git+https://github.com/kevinbai0/node-ts-starter.git"
     },
     "dependencies": {
-        "express": "^4.17.1"
+        "express": "^4.17.3"
     },
     "devDependencies": {
         "@types/eslint": "^6.8.1",
